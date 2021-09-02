@@ -910,8 +910,8 @@ public class Block extends Message {
      *
      * @param height block height, if known, or -1 otherwise.
      */
-    @VisibleForTesting
-    void addCoinbaseTransaction(byte[] pubKeyTo, Coin value, final int height) {
+    // aicoin uses this method
+    public void addCoinbaseTransaction(byte[] pubKeyTo, Coin value, final int height) {
         unCacheTransactions();
         transactions = new ArrayList<>();
         Transaction coinbase = new Transaction(params);

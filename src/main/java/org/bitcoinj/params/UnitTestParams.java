@@ -32,7 +32,6 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
 
     public UnitTestParams() {
         super();
-        assert false : "aicoin does not use the unit test blockchain";
         id = ID_UNITTESTNET;
         packetMagic = 0x0b110907;
         addressHeader = 111;

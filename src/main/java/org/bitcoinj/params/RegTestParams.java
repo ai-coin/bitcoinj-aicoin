@@ -31,7 +31,6 @@ public class RegTestParams extends AbstractBitcoinNetParams {
 
     public RegTestParams() {
         super();
-        assert false : "aicoin does not use the regression test blockchain";
         packetMagic = 0xfabfb5daL;
         addressHeader = 111;
         p2shHeader = 196;
