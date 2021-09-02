@@ -22,6 +22,23 @@
   </properties>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.0.0-M1</version>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+
     <plugins>
 
       <plugin>
@@ -95,4 +112,12 @@
     </dependency>
 
   </dependencies>
+
+  <distributionManagement>
+    <repository>
+      <!-- Nexus artifact server must be the same as specified in ~/.m2/settings.xml -->
+      <id>nexus</id>
+      <url>http://api-ai-blockchain-server.dyndns.org:8885/texai-artifact-server/repository/maven-releases/</url>
+    </repository>
+  </distributionManagement>
 </project>

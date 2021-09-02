@@ -31,10 +31,10 @@ import static com.google.common.base.Preconditions.checkState;
  * <p>A Message is a data structure that can be serialized/deserialized using the Bitcoin serialization format.
  * Specific types of messages that are used both in the block chain, and on the wire, are derived from this
  * class.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
-public abstract class Message {
+public abstract class Message implements Serializable{ // aicoin version message is serializable
     private static final Logger log = LoggerFactory.getLogger(Message.class);
 
     public static final int MAX_SIZE = 0x02000000; // 32MB
@@ -77,7 +77,7 @@ public abstract class Message {
     }
 
     /**
-     * 
+     *
      * @param params NetworkParameters object.
      * @param payload Bitcoin protocol formatted byte array containing message content.
      * @param offset The location of the first payload byte within the array.
@@ -100,11 +100,11 @@ public abstract class Message {
         if (this.length == UNKNOWN_LENGTH)
             checkState(false, "Length field has not been set in constructor for %s after parse.",
                        getClass().getSimpleName());
-        
+
         if (SELF_CHECK) {
             selfCheck(payload, offset);
         }
-        
+
         if (!serializer.isParseRetainMode())
             this.payload = null;
     }
@@ -342,7 +342,7 @@ public abstract class Message {
             throw new ProtocolException(e);
         }
     }
-    
+
     protected byte[] readByteArray() throws ProtocolException {
         long len = readVarInt();
         return readBytes((int)len);

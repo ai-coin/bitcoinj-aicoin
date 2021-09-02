@@ -44,6 +44,7 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
 
     public TestNet3Params() {
         super();
+        assert false : "aicoin does not use the test net blockchain";
         id = ID_TESTNET;
         packetMagic = 0x0b110907;
         interval = INTERVAL;
