@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.*;
 /**
  * <p>A TransactionOutput message contains a scriptPubKey that controls who is able to spend its value. It is a sub-part
  * of the Transaction message.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class TransactionOutput extends ChildMessage {
@@ -104,7 +104,9 @@ public class TransactionOutput extends ChildMessage {
         // Negative values obviously make no sense, except for -1 which is used as a sentinel value when calculating
         // SIGHASH_SINGLE signatures, so unfortunately we have to allow that here.
         checkArgument(value.signum() >= 0 || value.equals(Coin.NEGATIVE_SATOSHI), "Negative values not allowed");
-        checkArgument(!params.hasMaxMoney() || value.compareTo(params.getMaxMoney()) <= 0, "Values larger than MAX_MONEY not allowed");
+//        checkArgument(!params.hasMaxMoney() || value.compareTo(params.getMaxMoney()) <= 0, "Values larger than MAX_MONEY not allowed");
+        // aicoin
+        checkArgument(value.getValue() <= 50000000000000000L, "Values larger than 500000000 aicoins are not allowed");
         this.value = value.value;
         this.scriptBytes = scriptBytes;
         setParent(parent);

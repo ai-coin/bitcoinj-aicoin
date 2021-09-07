@@ -900,6 +900,36 @@ public class Block extends Message {
         return transactions == null ? null : ImmutableList.copyOf(transactions);
     }
 
+    /** Adds an aicoin coinbase transaction to the block.
+     *
+     * @param height block height
+     */
+    public void aicoinAddCoinbaseTransaction(byte[] pubKeyTo, Coin value, final int height) {
+        unCacheTransactions();
+        transactions = new ArrayList<>();
+        Transaction coinbase = new Transaction(params);
+        final ScriptBuilder inputBuilder = new ScriptBuilder();
+
+        if (height >= Block.BLOCK_HEIGHT_GENESIS) {
+            inputBuilder.number(height);
+        }
+        inputBuilder.data(new byte[]{(byte) txCounter, (byte) (txCounter++ >> 8)});
+
+        // A real coinbase transaction has some stuff in the scriptSig like the extraNonce and difficulty. The
+        // transactions are distinguished by every TX output going to a different key.
+        //
+        // Here we will do things a bit differently so a new address isn't needed every time. We'll put a simple
+        // counter in the scriptSig so every transaction has a different hash.
+        coinbase.addInput(new TransactionInput(params, coinbase,
+                inputBuilder.build().getProgram()));
+        coinbase.addOutput(new TransactionOutput(params, coinbase, value,
+                ScriptBuilder.createP2WPKHOutputScript(ECKey.fromPublicOnly(pubKeyTo)).getProgram()));
+        transactions.add(coinbase);
+        coinbase.setParent(this);
+        coinbase.length = coinbase.unsafeBitcoinSerialize().length;
+        adjustLength(transactions.size(), coinbase.length);
+    }
+
     // ///////////////////////////////////////////////////////////////////////////////////////////////
     // Unit testing related methods.
 
