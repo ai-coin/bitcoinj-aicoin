@@ -62,7 +62,7 @@ import java.math.BigInteger;
  * Whether to trust a transaction is something that needs to be decided on a case by case basis - a rule that makes
  * sense for selling MP3s might not make sense for selling cars, or accepting payments from a family member. If you
  * are building a wallet, how to present confidence to your users is something to consider carefully.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class Transaction extends ChildMessage {
@@ -1623,8 +1623,14 @@ public class Transaction extends ChildMessage {
                 if (output.getValue().signum() < 0)    // getValue() can throw IllegalStateException
                     throw new VerificationException.NegativeValueOutput();
                 valueOut = valueOut.add(output.getValue());
-                if (params.hasMaxMoney() && valueOut.compareTo(params.getMaxMoney()) > 0)
+                // aicoin has 90,000,000,000 coins max
+                if (getParams().equals(org.bitcoinj.params.MainNetParams.get())) {
+                    if (valueOut.compareTo(org.bitcoinj.core.Coin.COIN.multiply(90000000000L))  > 0) {
+                        throw new IllegalArgumentException();
+                    }
+                } else if (params.hasMaxMoney() && valueOut.compareTo(params.getMaxMoney()) > 0) {
                     throw new IllegalArgumentException();
+                }
             }
         } catch (IllegalStateException e) {
             throw new VerificationException.ExcessiveValue();

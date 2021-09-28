@@ -31,6 +31,7 @@ import java.util.*;
 import static com.google.common.base.Preconditions.checkState;
 import static org.bitcoinj.core.Coin.*;
 import static org.bitcoinj.core.Sha256Hash.*;
+import static org.bitcoinj.core.Utils.HEX;
 
 /**
  * <p>A block is a group of transactions, and is one of the fundamental data structures of the Bitcoin system.
@@ -902,32 +903,57 @@ public class Block extends Message {
 
     /** Adds an aicoin coinbase transaction to the block.
      *
+     * @param pubKeyTo the public key of the recipient of the block reward
+     * @param value the coinbase reward value
      * @param height block height
+     * @param witnessCommitment the witness commitment hex value provided by the getblocktemplate RPC result
      */
-    public void aicoinAddCoinbaseTransaction(byte[] pubKeyTo, Coin value, final int height) {
+    public void aicoinAddCoinbaseTransaction(
+            byte[] pubKeyTo,
+            Coin value,
+            final int height,
+            final String witnessCommitment) {
         unCacheTransactions();
         transactions = new ArrayList<>();
-        Transaction coinbase = new Transaction(params);
+        final Transaction coinbase = new Transaction(params);
+        coinbase.setVersion(2); // version
+
+        /**
+        * Bitcoin does not verify the script bytes of the coinbase transaction input. This counter ensures that every
+        * coinbase transaction has a unique hash.
+        */
         final ScriptBuilder inputBuilder = new ScriptBuilder();
 
         if (height >= Block.BLOCK_HEIGHT_GENESIS) {
             inputBuilder.number(height);
         }
         inputBuilder.data(new byte[]{(byte) txCounter, (byte) (txCounter++ >> 8)});
+        final TransactionInput transactionInput = new TransactionInput(
+                params,
+                coinbase, // parentTransaction
+                inputBuilder.build().getProgram()); // scriptBytes
+        final TransactionWitness reservedTransactionWitness = new TransactionWitness(1); // pushCount
+        reservedTransactionWitness.setPush(0, HEX.decode("0000000000000000000000000000000000000000000000000000000000000000"));
+        transactionInput.setWitness(reservedTransactionWitness);
+        transactionInput.setSequenceNumber(TransactionInput.NO_SEQUENCE);
+        assert transactionInput.isCoinBase();
+        coinbase.addInput(transactionInput);
 
-        // A real coinbase transaction has some stuff in the scriptSig like the extraNonce and difficulty. The
-        // transactions are distinguished by every TX output going to a different key.
-        //
-        // Here we will do things a bit differently so a new address isn't needed every time. We'll put a simple
-        // counter in the scriptSig so every transaction has a different hash.
-        coinbase.addInput(new TransactionInput(params, coinbase,
-                inputBuilder.build().getProgram()));
-        coinbase.addOutput(new TransactionOutput(params, coinbase, value,
-                ScriptBuilder.createP2WPKHOutputScript(ECKey.fromPublicOnly(pubKeyTo)).getProgram()));
+        coinbase.addOutput(new TransactionOutput(
+                params,
+                coinbase, // parent
+                value,
+                ScriptBuilder.createP2WPKHOutputScript(ECKey.fromPublicOnly(pubKeyTo)).getProgram())); // scriptBytes
+
+        final String segwitCommitmentHeader = "aa21a9ed";
+        coinbase.addOutput(
+                Coin.ZERO,
+                ScriptBuilder.createOpReturnScript(HEX.decode(segwitCommitmentHeader+witnessCommitment)));
         transactions.add(coinbase);
         coinbase.setParent(this);
         coinbase.length = coinbase.unsafeBitcoinSerialize().length;
         adjustLength(transactions.size(), coinbase.length);
+        coinbase.verify();
     }
 
     // ///////////////////////////////////////////////////////////////////////////////////////////////
