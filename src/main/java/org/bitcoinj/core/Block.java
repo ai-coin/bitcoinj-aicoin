@@ -901,18 +901,17 @@ public class Block extends Message {
         return transactions == null ? null : ImmutableList.copyOf(transactions);
     }
 
-    /** Adds an aicoin coinbase transaction to the block.
+    /**
+     * Adds an aicoin coinbase transaction without the witness transaction output.
      *
      * @param pubKeyTo the public key of the recipient of the block reward
      * @param value the coinbase reward value
      * @param height block height
-     * @param witnessCommitment the witness commitment hex value provided by the getblocktemplate RPC result
      */
     public void aicoinAddCoinbaseTransaction(
             byte[] pubKeyTo,
             Coin value,
-            final int height,
-            final String witnessCommitment) {
+            final int height) {
         unCacheTransactions();
         transactions = new ArrayList<>();
         final Transaction coinbase = new Transaction(params);
@@ -944,13 +943,25 @@ public class Block extends Message {
                 coinbase, // parent
                 value,
                 ScriptBuilder.createP2WPKHOutputScript(ECKey.fromPublicOnly(pubKeyTo)).getProgram())); // scriptBytes
+        transactions.add(coinbase);
+        coinbase.setParent(this);
+        coinbase.length = coinbase.unsafeBitcoinSerialize().length;
+        adjustLength(transactions.size(), coinbase.length);
+        coinbase.verify();
+    }
 
+    /**
+     * Modifies the block's coinbase transaction to add the witness transaction output.
+     *
+     * @param witnessRoot the calculated witness root
+     */
+    public void aicoinAddWitnessToCoinbaseTransaction(final String witnessRoot) {
+        unCacheTransactions();
+        final Transaction coinbase = transactions.get(0);
         final String segwitCommitmentHeader = "aa21a9ed";
         coinbase.addOutput(
                 Coin.ZERO,
-                ScriptBuilder.createOpReturnScript(HEX.decode(segwitCommitmentHeader+witnessCommitment)));
-        transactions.add(coinbase);
-        coinbase.setParent(this);
+                ScriptBuilder.createOpReturnScript(HEX.decode(segwitCommitmentHeader + witnessRoot)));
         coinbase.length = coinbase.unsafeBitcoinSerialize().length;
         adjustLength(transactions.size(), coinbase.length);
         coinbase.verify();
